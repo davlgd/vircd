@@ -1,0 +1,20 @@
+# Merge into Halloy's config.toml (https://halloy.chat/configuration/servers).
+# Create the account first: ./vircd account add david
+# Put its password in a file only you can read (chmod 600).
+[servers.vircd]
+nickname = "david"
+server = "127.0.0.1"
+port = 6667
+use_tls = false
+channels = ["#vlang"]
+# With TLS (vircd serve --listen 127.0.0.1:6697 --tls-cert ... --tls-key ...),
+# replace the server, port and use_tls lines above with:
+# server = "localhost"
+# port = 6697
+# use_tls = true
+# root_cert_path = "/absolute/path/to/certs/ca.pem"
+
+[servers.vircd.sasl.plain]
+username = "david"
+password_file = "/absolute/path/to/vircd-password.txt"
+disconnect_on_failure = true

@@ -1,0 +1,7 @@
+*.db
+*.db-*
+/vircd
+/vircd.dSYM
+.venv/
+__pycache__/
+*.pem

@@ -1,0 +1,42 @@
+{
+  "sasl": [
+    "PLAIN",
+    "SCRAM-SHA-256"
+  ],
+  "capabilities": [
+    "account-notify",
+    "account-tag",
+    "away-notify",
+    "batch",
+    "draft/read-marker",
+    "echo-message",
+    "extended-join",
+    "extended-monitor",
+    "labeled-response",
+    "message-tags",
+    "multi-prefix",
+    "server-time",
+    "setname"
+  ],
+  "optional_behaviors": [
+    "CAP_REQ_MINUS",
+    "INVITE_LIST",
+    "INVITE_OVERRIDES_LIMIT",
+    "MULTI_JOIN",
+    "MULTI_KICK",
+    "MULTI_NAMES_COMMAND",
+    "MULTI_PRIVMSG",
+    "SASL_AFTER_REGISTRATION"
+  ],
+  "isupport": {
+    "CASEMAPPING": "rfc1459",
+    "ELIST": "U",
+    "MONITOR": "100",
+    "MSGREFTYPES": "msgid,timestamp",
+    "PREFIX": "(ov)@+",
+    "STATUSMSG": "@+",
+    "WHOX": null,
+    "BOT": "B",
+    "UTF8ONLY": null
+  }
+}
