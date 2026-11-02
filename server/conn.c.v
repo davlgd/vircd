@@ -7,10 +7,6 @@ import strings
 import sync.stdatomic
 import time
 
-#include <sys/socket.h>
-
-fn C.shutdown(fd int, how int) int
-
 // Stream is a client connection, in clear text or TLS.
 interface Stream {
 mut:
@@ -35,7 +31,7 @@ mut:
 
 // wake makes a blocked read return, without releasing the file descriptor.
 fn (l &Link) wake() {
-	C.shutdown(l.fd, 2)
+	net.shutdown(l.fd)
 }
 
 fn (mut l Link) release() {

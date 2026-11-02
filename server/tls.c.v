@@ -81,7 +81,7 @@ fn (mut t TlsStream) call(f fn (mut t TlsStream) int) !int {
 		}
 		t.failed = true
 		t.mu.unlock()
-		C.shutdown(t.fd, 2)
+		net.shutdown(t.fd)
 		return error('TLS error ${r}')
 	}
 	t.mu.unlock()
