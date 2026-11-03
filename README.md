@@ -112,7 +112,7 @@ Not implemented: server linking, services, multiple connections sharing a nickna
 ## Tests
 
 ```sh
-v -cc clang test .                                # unit tests (ircmsg, store)
+v -cc clang test .                                # unit tests (ircmsg, store, TLS stream)
 v -cc clang -o vircd . && python3 tests/smoke.py  # end-to-end, add --tls for TLS
 ```
 

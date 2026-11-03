@@ -7,7 +7,7 @@ Read `README.md` first: it describes what the server does and how it is laid out
 ```sh
 v fmt -w .                                   # format
 v vet .                                      # style notices
-v -cc clang test .                           # unit tests (ircmsg, store)
+v -cc clang test .                           # unit tests (ircmsg, store, TLS stream)
 v -cc clang -o vircd . && python3 tests/smoke.py && python3 tests/smoke.py --tls
 ```
 
