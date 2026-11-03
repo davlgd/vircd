@@ -4,7 +4,6 @@
 module server
 
 import crypto.rand
-import crypto.scram
 import encoding.utf8
 import ircmsg
 import log
@@ -59,7 +58,6 @@ mut:
 	auth_queue []AuthJob
 	auth_busy  int
 	capture    &Capture = unsafe { nil }
-	dummy      scram.Credentials
 	max_seen   int
 	// guest_seq numbers the Guest nicknames given to clients that lose a reserved nickname.
 	guest_seq  int
@@ -92,7 +90,6 @@ pub fn new_server(cfg Config) !&Server {
 		created: time.now()
 	}
 	s.db = store.open(cfg.db)!
-	s.dummy = s.db.dummy_credentials()!
 	s.msgid_base = rand.bytes(6)!.hex()
 	if cfg.tls_cert != '' {
 		check_tls_compiler()!

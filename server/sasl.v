@@ -155,7 +155,7 @@ fn (mut s Server) sasl_plain(mut c Client, data string) {
 	}
 	mut job := AuthJob{
 		id:          c.id
-		credentials: s.dummy
+		credentials: s.db.dummy_credentials(casemapping.fold(authcid))
 		password:    password
 	}
 	if acct := find_login(mut s.db, authcid) {
@@ -266,21 +266,20 @@ fn (mut s Server) sasl_success(mut c Client, account string, account_id int) {
 fn (mut s Server) sasl_scram_step(mut c Client, data string) {
 	if c.sasl_scram == unsafe { nil } {
 		mut db := s.db
-		dummy := s.dummy
 		mut binding := &AuthBinding{}
 		c.sasl_binding = binding
 		c.sasl_scram = scram.new_server(
 			mechanism: .sha256
-			lookup:    fn [mut db, dummy, mut binding] (username string) !scram.Credentials {
+			lookup:    fn [mut db, mut binding] (username string) !scram.Credentials {
 				if acct := find_login(mut db, username) {
 					binding.id = acct.id
 					binding.name = acct.name
 					binding.credentials = acct.credentials.encode()
 					return acct.credentials
 				}
-				// Unknown accounts go through the whole exchange and fail at the end
-				// (RFC 5802 §7), so that they cannot be told from wrong passwords.
-				return dummy
+				// Unknown accounts go through the whole exchange and fail at the end,
+				// so that they cannot be told from wrong passwords.
+				return db.dummy_credentials(casemapping.fold(username))
 			}
 		) or {
 			s.sasl_failed(mut c)

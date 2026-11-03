@@ -1,5 +1,6 @@
 module store
 
+import db.sqlite
 import os
 
 const test_dir = os.join_path(os.vtmp_dir(), 'vircd_store_test_${os.getpid()}')
@@ -18,6 +19,62 @@ fn temp_store(name string) !&Store {
 	return s
 }
 
+fn test_dummy_credentials() {
+	path := os.join_path(test_dir, 'dummy.db')
+	mut s := open(path)!
+	alice := s.dummy_credentials('alice')
+	assert alice.salt.len == 16
+	assert alice.iterations == s.iterations
+	assert alice.salt == s.dummy_credentials('alice').salt
+	assert alice.salt != s.dummy_credentials('bob').salt
+	assert !check_password(alice, '')
+	s.close()
+	// The secret is kept: a restarted server gives the same salt.
+	mut reopened := open(path)!
+	defer {
+		reopened.close()
+	}
+	assert reopened.dummy_credentials('alice').salt == alice.salt
+	assert reopened.dummy_credentials('alice').stored_key == alice.stored_key
+}
+
+fn test_migration_from_v1() {
+	path := os.join_path(test_dir, 'v1.db')
+	mut db := sqlite.connect(path)!
+	for stmt in schema_v1 {
+		assert db.exec_none(stmt) == sqlite.sqlite_done
+	}
+	assert db.exec_none("INSERT INTO accounts (name, name_key, credentials) VALUES ('Alice', 'alice', 'x')") == sqlite.sqlite_done
+	assert db.exec_none('PRAGMA user_version = 1') == sqlite.sqlite_done
+	db.close()!
+	mut s := open(path)!
+	defer {
+		s.close()
+	}
+	assert s.db.q_int('PRAGMA user_version')! == migrations.len
+	assert s.dummy_secret.len == dummy_secret_len
+	assert s.list_accounts()! == ['Alice']
+}
+
+fn test_malformed_dummy_secret() {
+	for value in ['', '00', 'zz'.repeat(32), '00'.repeat(33)] {
+		path := os.join_path(test_dir, 'bad_secret.db')
+		mut s := open(path)!
+		s.query('UPDATE settings SET value = ? WHERE name = ?', value, 'dummy_secret')!
+		s.close()
+		if mut reopened := open(path) {
+			reopened.close()
+			assert false, 'opened with dummy secret "${value}"'
+		} else {
+			assert err.msg().contains('dummy secret'), err.msg()
+		}
+		os.rm(path)!
+		for suffix in ['-wal', '-shm'] {
+			os.rm(path + suffix) or {}
+		}
+	}
+}
+
 fn test_accounts() {
 	mut s := temp_store('accounts')!
 	defer {
@@ -27,7 +84,7 @@ fn test_accounts() {
 	assert acct.name == 'Alice'
 	assert check_password(acct.credentials, 'correct horse')
 	assert !check_password(acct.credentials, 'wrong horse')
-	assert !check_password(s.dummy_credentials()!, 'correct horse')
+	assert !check_password(s.dummy_credentials('alice'), 'correct horse')
 	if _ := s.add_account('ALICE', 'alice', 'another one') {
 		assert false
 	}

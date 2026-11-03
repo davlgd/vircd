@@ -1,7 +1,9 @@
 module store
 
+import crypto.hmac
 import crypto.rand
 import crypto.scram
+import crypto.sha256
 import crypto.subtle
 import ircmsg
 
@@ -111,10 +113,25 @@ pub fn (mut s Store) list_accounts() ![]string {
 	return s.query('SELECT name FROM accounts ORDER BY name_key')!.map(it.val(0))
 }
 
-// dummy_credentials returns credentials nobody can log in with, of the same cost
-// as real ones, so that unknown accounts take as long to reject as known ones.
-pub fn (s &Store) dummy_credentials() !scram.Credentials {
-	return s.new_credentials(rand.bytes(16)!.hex())
+// dummy_credentials returns the credentials used for `name_key` when no account
+// has that name; nobody can log in with them. Derived from the name and a secret
+// kept in the database, they give each name its own pseudorandom salt, the same
+// every time as long as the database is kept, so that unknown names do not share
+// a salt that accounts lack. Checking a PLAIN password against them costs as
+// much as against an account created with the same iteration count.
+pub fn (s &Store) dummy_credentials(name_key string) scram.Credentials {
+	return scram.Credentials{
+		mechanism:  .sha256
+		salt:       s.dummy_mac('salt', name_key)[..16]
+		iterations: s.iterations
+		stored_key: s.dummy_mac('stored_key', name_key)
+		server_key: s.dummy_mac('server_key', name_key)
+	}
+}
+
+fn (s &Store) dummy_mac(label string, name_key string) []u8 {
+	return hmac.new(s.dummy_secret, '${label}\x00${name_key}'.bytes(), sha256.sum,
+		sha256.block_size)
 }
 
 // check_password verifies a PLAIN password against SCRAM credentials: it derives
